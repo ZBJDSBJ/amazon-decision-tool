@@ -5,7 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>DataToDecision — 把你手上的选品数据，变成一份「做 / 不做」的结论</title>
-<meta name="description" content="上传你自己的 Keepa CSV、后台 SQP 导出或一份 ASIN 列表，30 秒得到一份带推理链、风险清单和可信度标注的选品决策报告。$19/月，不绑定数据供应商，数据不离开你的浏览器。">
+<meta name="description" content="把你自己手上的选品数据（Keepa 导出 / 自有表格 / ASIN 列表）变成一份带推理链、风险清单和可信度标注的「做/不做」决策报告。$19/月，不绑定数据供应商，报告可导出带走。">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#1a5cff">
 <style>
   :root{
     --ink:#0f1720; --ink-2:#39485a; --muted:#6b7a8d;
@@ -67,6 +72,7 @@
   tbody tr:last-child td{border-bottom:none}
   td.yes{color:var(--go); font-weight:600}
   td.no{color:var(--stop); font-weight:600}
+  td.warn{color:var(--warn); font-weight:600}
 
   .pill{display:inline-block; font-size:12px; font-weight:650; padding:2px 8px; border-radius:999px}
   .pill.go{background:var(--go-bg); color:var(--go)}
@@ -126,9 +132,9 @@
     </p>
     <div class="cta">
       <a class="btn btn-primary" href="#start">免费帮你出一份报告</a>
-      <a class="btn btn-ghost" href="#price">看价格（$19/月）</a>
+      <a class="btn btn-ghost" href="demo-report.html">看一份真实生成的报告</a>
     </div>
-    <p class="micro">不需要绑定任何数据供应商 · 文件在你的浏览器里解析，不上传原始数据 · 报告可导出</p>
+    <p class="micro">不需要绑定任何数据供应商 · 不需要授权 Amazon 账号 · 报告可导出带走 · 数据在本地计算，不必上传</p>
   </div>
 
   <section class="alt" id="pain">
@@ -164,7 +170,7 @@
         <div class="step">
           <div class="n">1</div>
           <h3>导入你自己的表</h3>
-          <p>CSV / TSV 都行。Keepa 导出的宽表、卖家精灵导出的表、或者你自己拉的 Excel —— 我们自动识别列名，并把<strong>没识别到的列明确列给你看</strong>，不假装全都读懂了。</p>
+          <p>CSV / TSV 都行。Keepa 导出的宽表、卖家精灵导出的表、或者你自己拉的 Excel 导出 —— 自动识别列名，并把<strong>没识别到的列明确列给你看</strong>，不假装全都读懂了。</p>
         </div>
         <div class="step">
           <div class="n">2</div>
@@ -179,7 +185,7 @@
       </div>
 
       <h2 style="margin-top:46px">报告长这样</h2>
-      <p class="sub">下面是一份真实格式的示例（数据为演示用的样例）。</p>
+      <p class="sub">下面是从工具真实输出里截取的一段（数据为演示样例）。<a href="demo-report.html"><strong>看完整报告 →</strong></a></p>
       <pre class="sample"><span class="m">### 1.</span> <span class="g">✅ GO</span> — Collapsible Silicone Food Storage Containers, 4-Pack  <span class="m">B0EXAMPLE1</span>
 <span class="m">- 基础数据：售价 $27.99 ｜ BSR 18,500 ｜ 评论 210 ｜ 评分 4.4 ｜ 卖家 1</span>
 
@@ -222,6 +228,36 @@
         </table>
       </div>
       <p class="micro">竞品价格来自各家官网公开定价页（2026-09 核对）。我们不打价格战，我们做的是他们不愿意做的那一步 —— 因为让你能导出数据、能导入别处的数据，会削弱他们自己的订阅。</p>
+    </div>
+  </section>
+
+  <section class="alt" id="capability">
+    <div class="wrap">
+      <h2>能力清单：现在能做什么，还不能做什么</h2>
+      <p class="sub">这一节是刻意写的。竞品不告诉你工具的边界，结果你在它做不到的地方浪费预算和几周时间。我们反过来做。</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>能力</th><th>状态</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>CSV / TSV 导入 + 列名自动映射</td><td class="yes">✅ 已支持</td><td>Keepa 宽表、卖家精灵、自有中文表头均可；识别不到的列会列出来，不静默丢掉</td></tr>
+            <tr><td>脏数据审计</td><td class="yes">✅ 已支持</td><td>重复 ASIN、字段缺失率、越界值、解析失败、单位可疑（如价格疑似「分」）、父子体销量矛盾</td></tr>
+            <tr><td>数值兼容</td><td class="yes">✅ 已支持</td><td>美式/欧式小数与千分位、货币符号、<code>1.2K</code> 后缀、<code>n/a</code> 占位符都能正确处理</td></tr>
+            <tr><td>FBA 单位经济</td><td class="yes">✅ 已支持</td><td>佣金（含最低佣金规则）、FBA 配送费、仓储摊销、广告、退货、单件贡献利润、毛利率、ROI、保本售价、保本 ACOS、回本所需月销</td></tr>
+            <tr><td>敏感性分析</td><td class="yes">✅ 已支持</td><td>价格 × 广告 ACOS 矩阵：回答「广告涨到 40% 或降价 10%，我还赚不赚钱」</td></tr>
+            <tr><td>市场结构分析</td><td class="yes">✅ 已支持</td><td>Top-1/3/10 需求份额、品牌 HHI、价格带分布与空隙、评论壁垒分位、可进入窗口比例</td></tr>
+            <tr><td>可解释的三态结论</td><td class="yes">✅ 已支持</td><td>每条依据都带规则编号（如 <code>R6-review-wall</code>），阈值与权重全写在报告里、可调、可反驳</td></tr>
+            <tr><td>硬否决机制</td><td class="yes">✅ 已支持</td><td>单件不赚钱 / 低价+薄利 / 薄利+评论壁垒 三种情况直接否决，不会被「支持项多」派平</td></tr>
+            <tr><td>四种导出格式</td><td class="yes">✅ 已支持</td><td>Markdown / 自包含 HTML / CSV / JSON；HTML 可直接转发，对方不需要装任何东西</td></tr>
+            <tr><td>置信度标注</td><td class="yes">✅ 已支持</td><td>每个指标标 直接数据 / 推算（基于你配置的费率）/ 缺失；置信度由数据完整度算出，不是形容词</td></tr>
+            <tr><td>浏览器内自助使用（Web 应用）</td><td class="warn">🔸 开发中</td><td>当前是本地脚本 + 人工代跑。Web 版会在早期用户验证付费意愿之后开发——没验证就不做</td></tr>
+            <tr><td>关键词维度数据（后台 SQP / ABA 导出）</td><td class="no">❌ 暂不支持</td><td>本工具按<strong>商品（ASIN）维度</strong>判断。SQP 是关键词维度，需要另一套模型；我们宁可现在说清楚，也不想让你拿它处理完才发现结果没法用</td></tr>
+            <tr><td>自动接 Keepa API / SP-API 取数</td><td class="no">❌ 暂不支持</td><td>需要先确认数据源的转售与展示条款。当前请你自己在 Keepa 里导出，再用本工具分析——这样你也不用多付一份数据费</td></tr>
+            <tr><td>评论内容分析与主题聚类</td><td class="no">❌ 未做</td><td>在路线图上（Helium 10 砍掉 Review Insights 之后这块确实空着）</td></tr>
+            <tr><td>帮你找品 / 类目全量扫描</td><td class="no">❌ 不做</td><td>我们只判断<strong>你已经挑出来的候选品</strong>。找品是另一件事，我们不做，也不会假装能做</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="micro">当前版本由 31 个自动化测试覆盖（数值解析、列映射、质量审计、利润引擎、规则与硬否决、渲染、确定性）。阈值改一下结论就会跟着变——这一点你可以自己验证。</p>
     </div>
   </section>
 
@@ -283,7 +319,7 @@
       <div style="margin-top:22px">
         <details>
           <summary>我的数据会被上传到你们服务器吗？</summary>
-          <p>不需要。CSV 在你的浏览器里解析和计算，原始文件不离开你的设备；只有你主动点「导出」时才会生成报告文件。这也是我们不需要你授权 Amazon 账号的原因。</p>
+          <p>不必。报告由<strong>本地脚本</strong>生成，原始文件不需要上传——这也是我们不需要你授权 Amazon 账号的原因。<br>如果你选「帮你跑一份」，那是你主动把表发给我们，我们只用于生成这一份报告、不做他用，你也可以在收到报告后要求我们删除。</p>
         </details>
         <details>
           <summary>你们的销量数字准吗？</summary>
