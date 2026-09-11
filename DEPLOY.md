@@ -19,6 +19,8 @@
 |---|---|
 | `landing.html` | 落地页正文（真正的页面） |
 | `index.html` | 入口重定向页 → `landing.html` |
+| `demo-report.html` | 由 `tools/make_report.py` 真实生成的示例报告（HTML 自包含） |
+| `favicon.svg` / `favicon.ico` / `apple-touch-icon.png` / `icon-192.png` / `icon-512.png` / `site.webmanifest` | 站点图标全套（由 `tools/make_favicon.py` 生成） |
 | `vercel.json` | 静态站点配置（无构建，区域 sin1，缓存与安全头） |
 | `README.md` | 项目说明 |
 | `.gitignore` | 排除 `.vercel/`、`.env` 等 |
