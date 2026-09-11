@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>带成本的候选品决策报告</title>
+<style>
+:root{--ink:#0f1720;--ink2:#39485a;--muted:#6b7a8d;--line:#e3e8ef;--bg:#fff;--bg2:#f7f9fc;
+--bg3:#eef3f9;--accent:#1a5cff;--accent2:#0b3ecf;--go:#0f7a4a;--go-bg:#e8f6ef;--warn:#a86400;
+--warn-bg:#fdf3e3;--stop:#b3261e;--stop-bg:#fdecea;--mute-bg:#eef1f5;--r:12px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,
+"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px 64px}
+header.top{background:linear-gradient(180deg,#f7f9fc,#fff);border-bottom:1px solid var(--line);
+padding:32px 0 24px;margin-bottom:28px}
+h1{font-size:26px;margin:0 0 8px;letter-spacing:-.02em}
+h2{font-size:20px;margin:36px 0 10px;padding-top:8px;letter-spacing:-.01em}
+h3{font-size:16px;margin:22px 0 8px}
+h4{font-size:14px;margin:16px 0 6px;color:var(--ink2)}
+.sub{color:var(--muted);font-size:14px;margin:0 0 4px}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0 4px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--bg3);font-weight:650;font-size:13px;color:var(--ink2);white-space:nowrap}
+code{background:var(--bg3);padding:1px 5px;border-radius:4px;font:13px ui-monospace,Menlo,Consolas,monospace}
+.pill{display:inline-block;font-size:12px;font-weight:650;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.pill.go{background:var(--go-bg);color:var(--go)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.stop{background:var(--stop-bg);color:var(--stop)}.pill.mute{background:var(--mute-bg);color:var(--muted)}
+.cards{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}
+.card{flex:1 1 130px;border:1px solid var(--line);border-radius:var(--r);padding:14px;background:#fff}
+.card .n{font-size:26px;font-weight:800;letter-spacing:-.02em}
+.card .l{font-size:13px;color:var(--muted)}
+.notice{background:var(--warn-bg);border:1px solid #f0dcbb;border-radius:var(--r);padding:14px 16px;
+font-size:14px;color:#6b4a00;margin:16px 0}
+.item{border:1px solid var(--line);border-radius:var(--r);padding:18px;margin:16px 0;background:#fff}
+.item .head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.item .head .t{font-weight:700;font-size:16px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+ul.tight{margin:6px 0 0;padding-left:20px}
+ul.tight li{margin-bottom:4px}
+.rid{color:var(--muted);font:12px ui-monospace,Menlo,Consolas,monospace}
+.bar{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:13px}
+.bar .lbl{width:130px;color:var(--ink2)}
+.bar .track{flex:1;background:var(--bg3);border-radius:4px;height:16px;overflow:hidden}
+.bar .fill{height:100%;background:var(--accent);opacity:.75}
+.bar .v{width:44px;text-align:right;color:var(--muted)}
+.matrix td{text-align:center;font-variant-numeric:tabular-nums}
+.matrix .neg{background:var(--stop-bg);color:var(--stop)}
+.matrix .pos{background:var(--go-bg);color:var(--go)}
+details{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:#fff;margin:8px 0}
+summary{cursor:pointer;font-weight:650;font-size:14px}
+footer{border-top:1px solid var(--line);margin-top:40px;padding-top:18px;color:var(--muted);font-size:13px}
+@media(max-width:720px){.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+<h1>带成本的候选品决策报告</h1>
+<p class="sub">生成时间 2026-09-11 ｜ 数据来源 <code>samples/candidates-with-costs.csv</code> ｜ 编码 utf-8-sig ｜ 6 行</p>
+<p class="sub">数据完整度评级 <span class="pill warn">中</span> （关键字段 BSR/售价 覆盖 83.3%）</p>
+</div></header>
+<div class="wrap">
+<div class="notice"><strong>先读这一节：</strong>下面所有利润数字都是按你配置的费率<strong>推算</strong>的；所有集中度与分布指标都是基于<strong>你导入的 6 个样本</strong>算的，不等于整个类目。缺数据的项我们写「缺失」，不做猜测；字段不够时我们直接给「信息不足」而不是编一个分数。</div>
+<h2>0. 结论速览</h2>
+<div class="cards">
+<div class="card"><div class="n">2</div><div class="l">✅ GO</div></div>
+<div class="card"><div class="n">1</div><div class="l">🟡 GO（有保留）</div></div>
+<div class="card"><div class="n">2</div><div class="l">❌ NO-GO</div></div>
+<div class="card"><div class="n">1</div><div class="l">⚪ 信息不足</div></div>
+</div>
+<table><thead><tr><th>ASIN</th><th>结论</th><th>置信度</th><th>支持</th><th>反对</th><th>净分</th><th>标题</th></tr></thead><tbody>
+<tr><td><code>B0COST01</code></td><td><span class="pill go">✅ GO</span></td><td><span class="pill go">高</span></td><td>5</td><td>0</td><td>+6.5</td><td>Collapsible Silicone Food Storage Containers 4-Pack</td></tr>
+<tr><td><code>B0COST02</code></td><td><span class="pill go">✅ GO</span></td><td><span class="pill go">高</span></td><td>6</td><td>0</td><td>+8.5</td><td>Adjustable Aluminum Laptop Stand for Desk</td></tr>
+<tr><td><code>B0COST03</code></td><td><span class="pill stop">❌ NO-GO</span></td><td><span class="pill go">高</span></td><td>4</td><td>2</td><td>+2.0</td><td>Reusable Pet Hair Remover Roller</td></tr>
+<tr><td><code>B0COST04</code></td><td><span class="pill stop">❌ NO-GO</span></td><td><span class="pill go">高</span></td><td>3</td><td>3</td><td>-1.0</td><td>Insulated Stainless Steel Water Bottle 32oz</td></tr>
+<tr><td><code>B0COST05</code></td><td><span class="pill mute">⚪ 信息不足</span></td><td><span class="pill stop">低</span></td><td>1</td><td>0</td><td>+1.0</td><td>Bamboo Expandable Drawer Organizer</td></tr>
+<tr><td><code>B0COST06</code></td><td><span class="pill warn">🟡 GO（有保留）</span></td><td><span class="pill go">高</span></td><td>3</td><td>1</td><td>+2.0</td><td>Memory Foam Seat Cushion for Office Chair</td></tr>
+</tbody></table>
+<h2>1. 数据质量审计</h2>
+<table><thead><tr><th>字段</th><th>你在表里的列</th><th>有效值</th><th>缺失</th><th>覆盖</th></tr></thead><tbody>
+<tr><td>price</td><td><code>Buy Box: Current</code></td><td>5</td><td>1</td><td>83.3%</td></tr>
+<tr><td>bsr</td><td><code>Sales Rank: Current</code></td><td>5</td><td>1</td><td>83.3%</td></tr>
+<tr><td>reviews</td><td><code>Review Count</code></td><td>6</td><td>0</td><td>100.0%</td></tr>
+<tr><td>rating</td><td><code>Rating</code></td><td>6</td><td>0</td><td>100.0%</td></tr>
+<tr><td>sellers</td><td><code>Seller Count</code></td><td>6</td><td>0</td><td>100.0%</td></tr>
+<tr><td>monthly_sales</td><td><code>Monthly Sales</code></td><td>6</td><td>0</td><td>100.0%</td></tr>
+<tr><td>cogs</td><td><code>COGS</code></td><td>6</td><td>0</td><td>100.0%</td></tr>
+<tr><td>monthly_revenue</td><td><code>Monthly Revenue</code></td><td>5</td><td>1</td><td>83.3%</td></tr>
+<tr><td>weight_lb</td><td><code>Weight (lb)</code></td><td>6</td><td>0</td><td>100.0%</td></tr>
+</tbody></table>
+<h2>2. 市场结构（基于你的样本）</h2>
+<p class="sub">计算权重：月销量</p>
+<table><thead><tr><th>指标</th><th>值</th></tr></thead><tbody>
+<tr><td>Top-1 份额</td><td>35.0%</td></tr>
+<tr><td>Top-3 份额</td><td>72.8%</td></tr>
+<tr><td>Top-10 份额</td><td>100.0%</td></tr>
+<tr><td>品牌数</td><td>6</td></tr>
+<tr><td>品牌集中度</td><td class="sub">样本量不足（6 行 / 6 个品牌，需≥8 行且≥4 个品牌），品牌集中度（HHI）在这么小的样本上不可靠，**本报告未用它下任何判断**</td></tr>
+<tr><td>评论数 P10 / P50 / P90</td><td>90 / 240 / 820</td></tr>
+<tr><td>可进入窗口（≤门槛评论数的占比）</td><td>50.0%</td></tr>
+<tr><td>硬壁垒占比（≥1000 评论）</td><td>16.7%</td></tr>
+</tbody></table>
+<h3>价格带分布</h3>
+<div class="bar"><div class="lbl">$12.99 – $16.37</div><div class="track"><div class="fill" style="width:100.0%"></div></div><div class="v">1</div></div>
+<div class="bar"><div class="lbl">$16.37 – $19.74</div><div class="track"><div class="fill" style="width:0.0%"></div></div><div class="v">0</div></div>
+<div class="bar"><div class="lbl">$19.74 – $23.12</div><div class="track"><div class="fill" style="width:100.0%"></div></div><div class="v">1</div></div>
+<div class="bar"><div class="lbl">$23.12 – $26.49</div><div class="track"><div class="fill" style="width:100.0%"></div></div><div class="v">1</div></div>
+<div class="bar"><div class="lbl">$26.49 – $29.87</div><div class="track"><div class="fill" style="width:0.0%"></div></div><div class="v">0</div></div>
+<div class="bar"><div class="lbl">$29.87 – $33.24</div><div class="track"><div class="fill" style="width:100.0%"></div></div><div class="v">1</div></div>
+<div class="bar"><div class="lbl">$33.24 – $36.62</div><div class="track"><div class="fill" style="width:0.0%"></div></div><div class="v">0</div></div>
+<div class="bar"><div class="lbl">$36.62 – $39.99</div><div class="track"><div class="fill" style="width:100.0%"></div></div><div class="v">1</div></div>
+<div class="notice">💡 这些价格区间在你的样本里竞争者很少 —— 可以评估是否把定价放进去；但样本不足时，也可能只是「没人做说明没人买」，需要另外验证</div>
+<p class="sub">以下集中度指标基于你导入的 6 个样本计算，**不等于整个类目**；样本越多越接近真实分布</p>
+<h2>3. 逐品结论与推理链</h2>
+<div class="item">
+<div class="head"><span class="t">1. Collapsible Silicone Food Storage Containers 4-Pack</span><span class="pill go">✅ GO</span><span class="pill go">置信度 高</span><span class="sub">净分 +6.5</span><code>B0COST01</code></div>
+<p class="sub">品牌 NestWell ｜ 售价 $32.99 ｜ BSR 12,000 ｜ 评论 180 ｜ 评分 4.4 ｜ 卖家 1</p>
+<div class="two">
+<div><h4>支持依据</h4><ul class="tight"><li>BSR 12,000 ≤ 50,000：该品位次靠前，说明有真实稳定的出单需求  〔R1-demand-bsr-strong〕 <span class="rid">[R1-demand-bsr-strong]</span></li><li>月销 450 件，月营收约 $14,846：达到可做量级  〔R3-sales-ok〕 <span class="rid">[R3-sales-ok]</span></li><li>评论数 180 ≤ 300：该位次尚未被评论壁垒锁死，新品有机会挤进去  〔R5-review-window〕 <span class="rid">[R5-review-window]</span></li><li>同 listing 卖家 1 家：跟卖不拥挤  〔R7-sellers-ok〕 <span class="rid">[R7-sellers-ok]</span></li><li>售价 $32.99 ≥ $15：有足够的差价空间容纳 FBA 费与广告费  〔R9-price-ok〕 <span class="rid">[R9-price-ok]</span></li></ul></div>
+<div><h4>反对依据</h4><ul class="tight"><li>（无）</li></ul></div>
+</div>
+<h4>单位经济（推算）</h4><table><tbody><tr><td>售价</td><td>32.99</td></tr><tr><td>平台佣金</td><td>4.95</td></tr><tr><td>FBA 配送费</td><td>4.5</td></tr><tr><td>仓储摊销</td><td>0.08</td></tr><tr><td>广告费</td><td>8.25</td></tr><tr><td>退货成本</td><td>0.0</td></tr><tr><td>采购成本</td><td>7.5</td></tr><tr><td>fba_fee_source</td><td>你表里的真实值</td></tr><tr><td>单件贡献利润</td><td>7.72</td></tr><tr><td>毛利率</td><td>23.4</td></tr><tr><td>ROI</td><td>102.9</td></tr><tr><td>保本售价</td><td>20.13</td></tr><tr><td>保本ACOS</td><td>48.4</td></tr><tr><td>回本所需月销（按 $100/月固定支出）</td><td>13</td></tr></tbody></table>
+<h4>可信度标注</h4><table><tbody><tr><td>售价</td><td>直接数据</td></tr><tr><td>BSR</td><td>直接数据</td></tr><tr><td>评论数</td><td>直接数据</td></tr><tr><td>评分</td><td>直接数据</td></tr><tr><td>卖家数</td><td>直接数据</td></tr><tr><td>月销量</td><td>直接数据</td></tr><tr><td>评论增速</td><td>缺失</td></tr><tr><td>FBA 配送费</td><td>直接数据</td></tr><tr><td>单件贡献利润</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>毛利率</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>ROI</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>保本售价</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>保本ACOS</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr></tbody></table>
+<p class="sub">未被判断的字段：评论增速 —— 缺失不等于没问题</p>
+</div>
+<div class="item">
+<div class="head"><span class="t">2. Adjustable Aluminum Laptop Stand for Desk</span><span class="pill go">✅ GO</span><span class="pill go">置信度 高</span><span class="sub">净分 +8.5</span><code>B0COST02</code></div>
+<p class="sub">品牌 DeskPro ｜ 售价 $39.99 ｜ BSR 35,000 ｜ 评论 90 ｜ 评分 4.6 ｜ 卖家 2</p>
+<div class="two">
+<div><h4>支持依据</h4><ul class="tight"><li>BSR 35,000 ≤ 50,000：该品位次靠前，说明有真实稳定的出单需求  〔R1-demand-bsr-strong〕 <span class="rid">[R1-demand-bsr-strong]</span></li><li>月销 310 件，月营收约 $12,397：达到可做量级  〔R3-sales-ok〕 <span class="rid">[R3-sales-ok]</span></li><li>评论数 90 ≤ 300：该位次尚未被评论壁垒锁死，新品有机会挤进去  〔R5-review-window〕 <span class="rid">[R5-review-window]</span></li><li>同 listing 卖家 2 家：跟卖不拥挤  〔R7-sellers-ok〕 <span class="rid">[R7-sellers-ok]</span></li><li>售价 $39.99 ≥ $15：有足够的差价空间容纳 FBA 费与广告费  〔R9-price-ok〕 <span class="rid">[R9-price-ok]</span></li><li>（推算）单件毛利率约 32%、ROI 约 215%，扣除广告与退货后仍有安全垫  〔R11-margin-good〕 <span class="rid">[R11-margin-good]</span></li></ul></div>
+<div><h4>反对依据</h4><ul class="tight"><li>（无）</li></ul></div>
+</div>
+<h4>单位经济（推算）</h4><table><tbody><tr><td>售价</td><td>39.99</td></tr><tr><td>平台佣金</td><td>6.0</td></tr><tr><td>FBA 配送费</td><td>5.0</td></tr><tr><td>仓储摊销</td><td>0.08</td></tr><tr><td>广告费</td><td>10.0</td></tr><tr><td>退货成本</td><td>0.0</td></tr><tr><td>采购成本</td><td>6.0</td></tr><tr><td>fba_fee_source</td><td>你表里的真实值</td></tr><tr><td>单件贡献利润</td><td>12.92</td></tr><tr><td>毛利率</td><td>32.3</td></tr><tr><td>ROI</td><td>215.3</td></tr><tr><td>保本售价</td><td>18.46</td></tr><tr><td>保本ACOS</td><td>57.3</td></tr><tr><td>回本所需月销（按 $100/月固定支出）</td><td>8</td></tr></tbody></table>
+<h4>可信度标注</h4><table><tbody><tr><td>售价</td><td>直接数据</td></tr><tr><td>BSR</td><td>直接数据</td></tr><tr><td>评论数</td><td>直接数据</td></tr><tr><td>评分</td><td>直接数据</td></tr><tr><td>卖家数</td><td>直接数据</td></tr><tr><td>月销量</td><td>直接数据</td></tr><tr><td>评论增速</td><td>缺失</td></tr><tr><td>FBA 配送费</td><td>直接数据</td></tr><tr><td>单件贡献利润</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>毛利率</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>ROI</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>保本售价</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>保本ACOS</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr></tbody></table>
+<p class="sub">未被判断的字段：评论增速 —— 缺失不等于没问题</p>
+</div>
+<div class="item">
+<div class="head"><span class="t">3. Reusable Pet Hair Remover Roller</span><span class="pill stop">❌ NO-GO</span><span class="pill go">置信度 高</span><span class="sub">净分 +2.0</span><code>B0COST03</code></div>
+<p class="sub">品牌 PetEase ｜ 售价 $12.99 ｜ BSR 45,000 ｜ 评论 240 ｜ 评分 4.3 ｜ 卖家 3</p>
+<div class="two">
+<div><h4>支持依据</h4><ul class="tight"><li>BSR 45,000 ≤ 50,000：该品位次靠前，说明有真实稳定的出单需求  〔R1-demand-bsr-strong〕 <span class="rid">[R1-demand-bsr-strong]</span></li><li>月销 520 件，月营收约 $6,755：达到可做量级  〔R3-sales-ok〕 <span class="rid">[R3-sales-ok]</span></li><li>评论数 240 ≤ 300：该位次尚未被评论壁垒锁死，新品有机会挤进去  〔R5-review-window〕 <span class="rid">[R5-review-window]</span></li><li>同 listing 卖家 3 家：跟卖不拥挤  〔R7-sellers-ok〕 <span class="rid">[R7-sellers-ok]</span></li></ul></div>
+<div><h4>反对依据</h4><ul class="tight"><li>售价 $12.99 &lt; $15：这个价格带的差价通常放不下 FBA 费 + 广告费，除非你的采购成本极低  〔R10-price-low〕 <span class="rid">[R10-price-low]</span></li><li>（推算）单件毛利率仅约 1% &lt; 20%：太薄，一次涨价或一次促销就会亏  〔R12-margin-thin〕 <span class="rid">[R12-margin-thin]</span></li></ul></div>
+</div>
+<h4>风险清单</h4><ul class="tight"><li>⚠️ 双重硬否决：售价 $12.99 低于门槛 $15，同时毛利率仅 1%</li><li>⚠️ 利润风险：推算毛利率低于门槛</li><li>⚠️ 定价风险：价格带过低</li></ul>
+<h4>单位经济（推算）</h4><table><tbody><tr><td>售价</td><td>12.99</td></tr><tr><td>平台佣金</td><td>1.95</td></tr><tr><td>FBA 配送费</td><td>3.4</td></tr><tr><td>仓储摊销</td><td>0.08</td></tr><tr><td>广告费</td><td>3.25</td></tr><tr><td>退货成本</td><td>0.0</td></tr><tr><td>采购成本</td><td>4.2</td></tr><tr><td>fba_fee_source</td><td>你表里的真实值</td></tr><tr><td>单件贡献利润</td><td>0.12</td></tr><tr><td>毛利率</td><td>0.9</td></tr><tr><td>ROI</td><td>2.8</td></tr><tr><td>保本售价</td><td>12.8</td></tr><tr><td>保本ACOS</td><td>25.9</td></tr><tr><td>回本所需月销（按 $100/月固定支出）</td><td>863</td></tr></tbody></table>
+<h4>可信度标注</h4><table><tbody><tr><td>售价</td><td>直接数据</td></tr><tr><td>BSR</td><td>直接数据</td></tr><tr><td>评论数</td><td>直接数据</td></tr><tr><td>评分</td><td>直接数据</td></tr><tr><td>卖家数</td><td>直接数据</td></tr><tr><td>月销量</td><td>直接数据</td></tr><tr><td>评论增速</td><td>缺失</td></tr><tr><td>FBA 配送费</td><td>直接数据</td></tr><tr><td>单件贡献利润</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>毛利率</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>ROI</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>保本售价</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>保本ACOS</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr></tbody></table>
+<p class="sub">未被判断的字段：评论增速 —— 缺失不等于没问题</p>
+</div>
+<div class="item">
+<div class="head"><span class="t">4. Insulated Stainless Steel Water Bottle 32oz</span><span class="pill stop">❌ NO-GO</span><span class="pill go">置信度 高</span><span class="sub">净分 -1.0</span><code>B0COST04</code></div>
+<p class="sub">品牌 HydroLine ｜ 售价 $24.99 ｜ BSR 120,000 ｜ 评论 5,200 ｜ 评分 4.7 ｜ 卖家 12</p>
+<div class="two">
+<div><h4>支持依据</h4><ul class="tight"><li>BSR 120,000 落在中等区间（50,000–300,000）：有需求但不算爆款位  〔R1-demand-bsr-strong〕 <span class="rid">[R1-demand-bsr-strong]</span></li><li>月销 900 件，月营收约 $22,491：达到可做量级  〔R3-sales-ok〕 <span class="rid">[R3-sales-ok]</span></li><li>售价 $24.99 ≥ $15：有足够的差价空间容纳 FBA 费与广告费  〔R9-price-ok〕 <span class="rid">[R9-price-ok]</span></li></ul></div>
+<div><h4>反对依据</h4><ul class="tight"><li>评论数 5,200 ≥ 1,000：头部壁垒高，新品要撼动它需要长期且昂贵的投入（这也是最常见的亏损来源）  〔R6-review-wall〕 <span class="rid">[R6-review-wall]</span></li><li>同 listing 卖家 12 ≥ 8：跟卖混战，Buy Box 会互相压价  〔R8-sellers-crowded〕 <span class="rid">[R8-sellers-crowded]</span></li><li>（推算）单件毛利率仅约 8% &lt; 20%：太薄，一次涨价或一次促销就会亏  〔R12-margin-thin〕 <span class="rid">[R12-margin-thin]</span></li></ul></div>
+</div>
+<h4>风险清单</h4><ul class="tight"><li>⚠️ 双重硬否决：毛利率仅 8% 却要突破 5,200 条评论的壁垒</li><li>⚠️ 利润风险：推算毛利率低于门槛</li><li>⚠️ 竞争风险：评论壁垒高</li><li>⚠️ Buy Box 风险：跟卖过多</li></ul>
+<h4>单位经济（推算）</h4><table><tbody><tr><td>售价</td><td>24.99</td></tr><tr><td>平台佣金</td><td>3.75</td></tr><tr><td>FBA 配送费</td><td>4.0</td></tr><tr><td>仓储摊销</td><td>0.08</td></tr><tr><td>广告费</td><td>6.25</td></tr><tr><td>退货成本</td><td>0.0</td></tr><tr><td>采购成本</td><td>9.0</td></tr><tr><td>fba_fee_source</td><td>你表里的真实值</td></tr><tr><td>单件贡献利润</td><td>1.92</td></tr><tr><td>毛利率</td><td>7.7</td></tr><tr><td>ROI</td><td>21.3</td></tr><tr><td>保本售价</td><td>21.8</td></tr><tr><td>保本ACOS</td><td>32.7</td></tr><tr><td>回本所需月销（按 $100/月固定支出）</td><td>53</td></tr></tbody></table>
+<h4>可信度标注</h4><table><tbody><tr><td>售价</td><td>直接数据</td></tr><tr><td>BSR</td><td>直接数据</td></tr><tr><td>评论数</td><td>直接数据</td></tr><tr><td>评分</td><td>直接数据</td></tr><tr><td>卖家数</td><td>直接数据</td></tr><tr><td>月销量</td><td>直接数据</td></tr><tr><td>评论增速</td><td>缺失</td></tr><tr><td>FBA 配送费</td><td>直接数据</td></tr><tr><td>单件贡献利润</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>毛利率</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>ROI</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>保本售价</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>保本ACOS</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr></tbody></table>
+<p class="sub">未被判断的字段：评论增速 —— 缺失不等于没问题</p>
+</div>
+<div class="item">
+<div class="head"><span class="t">5. Bamboo Expandable Drawer Organizer</span><span class="pill mute">⚪ 信息不足</span><span class="pill stop">置信度 低</span><span class="sub">净分 +1.0</span><code>B0COST05</code></div>
+<p class="sub">品牌 HomeTidy ｜ 评论 380 ｜ 评分 4.5 ｜ 卖家 4</p>
+<div class="two">
+<div><h4>支持依据</h4><ul class="tight"><li>同 listing 卖家 4 家：跟卖不拥挤  〔R7-sellers-ok〕 <span class="rid">[R7-sellers-ok]</span></li></ul></div>
+<div><h4>反对依据</h4><ul class="tight"><li>（无）</li></ul></div>
+</div>
+<h4>风险清单</h4><ul class="tight"><li>⚠️ 缺少「bsr」，这是判断需求与利润的最小必需字段</li><li>⚠️ 缺少「price」，这是判断需求与利润的最小必需字段</li></ul>
+<h4>可信度标注</h4><table><tbody><tr><td>售价</td><td>缺失</td></tr><tr><td>BSR</td><td>缺失</td></tr><tr><td>评论数</td><td>直接数据</td></tr><tr><td>评分</td><td>直接数据</td></tr><tr><td>卖家数</td><td>直接数据</td></tr><tr><td>月销量</td><td>直接数据</td></tr><tr><td>评论增速</td><td>缺失</td></tr><tr><td>FBA 配送费</td><td>直接数据</td></tr></tbody></table>
+<p class="sub">未被判断的字段：售价、BSR、评论增速 —— 缺失不等于没问题</p>
+</div>
+<div class="item">
+<div class="head"><span class="t">6. Memory Foam Seat Cushion for Office Chair</span><span class="pill warn">🟡 GO（有保留）</span><span class="pill go">置信度 高</span><span class="sub">净分 +2.0</span><code>B0COST06</code></div>
+<p class="sub">品牌 ComfortPlus ｜ 售价 $22.00 ｜ BSR 185,000 ｜ 评论 820 ｜ 评分 4.1 ｜ 卖家 6</p>
+<div class="two">
+<div><h4>支持依据</h4><ul class="tight"><li>BSR 185,000 落在中等区间（50,000–300,000）：有需求但不算爆款位  〔R1-demand-bsr-strong〕 <span class="rid">[R1-demand-bsr-strong]</span></li><li>同 listing 卖家 6 家：跟卖不拥挤  〔R7-sellers-ok〕 <span class="rid">[R7-sellers-ok]</span></li><li>售价 $22.00 ≥ $15：有足够的差价空间容纳 FBA 费与广告费  〔R9-price-ok〕 <span class="rid">[R9-price-ok]</span></li></ul></div>
+<div><h4>反对依据</h4><ul class="tight"><li>（推算）单件毛利率仅约 16% &lt; 20%：太薄，一次涨价或一次促销就会亏  〔R12-margin-thin〕 <span class="rid">[R12-margin-thin]</span></li></ul></div>
+</div>
+<h4>风险清单</h4><ul class="tight"><li>⚠️ 利润风险：推算毛利率低于门槛</li></ul>
+<h4>单位经济（推算）</h4><table><tbody><tr><td>售价</td><td>22.0</td></tr><tr><td>平台佣金</td><td>3.3</td></tr><tr><td>FBA 配送费</td><td>4.1</td></tr><tr><td>仓储摊销</td><td>0.08</td></tr><tr><td>广告费</td><td>5.5</td></tr><tr><td>退货成本</td><td>0.0</td></tr><tr><td>采购成本</td><td>5.5</td></tr><tr><td>fba_fee_source</td><td>你表里的真实值</td></tr><tr><td>单件贡献利润</td><td>3.52</td></tr><tr><td>毛利率</td><td>16.0</td></tr><tr><td>ROI</td><td>64.0</td></tr><tr><td>保本售价</td><td>16.13</td></tr><tr><td>保本ACOS</td><td>41.0</td></tr><tr><td>回本所需月销（按 $100/月固定支出）</td><td>29</td></tr></tbody></table>
+<h4>可信度标注</h4><table><tbody><tr><td>售价</td><td>直接数据</td></tr><tr><td>BSR</td><td>直接数据</td></tr><tr><td>评论数</td><td>直接数据</td></tr><tr><td>评分</td><td>直接数据</td></tr><tr><td>卖家数</td><td>直接数据</td></tr><tr><td>月销量</td><td>直接数据</td></tr><tr><td>评论增速</td><td>缺失</td></tr><tr><td>FBA 配送费</td><td>直接数据</td></tr><tr><td>单件贡献利润</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>毛利率</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>ROI</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>保本售价</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr><tr><td>保本ACOS</td><td>推算（基于你配置的费率；FBA 费来源：你表里的真实值）</td></tr></tbody></table>
+<p class="sub">未被判断的字段：评论增速 —— 缺失不等于没问题</p>
+</div>
+<h2>4. 方法与参数（可审计、可反驳）</h2>
+<details><summary>决策阈值</summary><table><tbody><tr><td>good_bsr</td><td>50000</td></tr><tr><td>weak_bsr</td><td>300000</td></tr><tr><td>hard_review_wall</td><td>1000</td></tr><tr><td>soft_review_wall</td><td>300</td></tr><tr><td>crowded_sellers</td><td>8</td></tr><tr><td>min_price</td><td>15.0</td></tr><tr><td>min_gross_margin_pct</td><td>20.0</td></tr><tr><td>good_gross_margin_pct</td><td>30.0</td></tr><tr><td>min_roi_pct</td><td>40.0</td></tr><tr><td>max_top3_share</td><td>0.6</td></tr><tr><td>max_brand_hhi</td><td>2500</td></tr><tr><td>min_reviews_for_demand</td><td>30</td></tr></tbody></table></details>
+<details><summary>规则权重（正=支持，负=反对）</summary><table><tbody><tr><td>demand_strong</td><td>2.0</td></tr><tr><td>demand_ok</td><td>1.0</td></tr><tr><td>demand_weak</td><td>-1.5</td></tr><tr><td>sales_ok</td><td>1.0</td></tr><tr><td>sales_low</td><td>-1.0</td></tr><tr><td>review_window_open</td><td>1.5</td></tr><tr><td>review_wall</td><td>-2.0</td></tr><tr><td>sellers_ok</td><td>1.0</td></tr><tr><td>sellers_crowded</td><td>-1.0</td></tr><tr><td>price_ok</td><td>1.0</td></tr><tr><td>price_too_low</td><td>-1.5</td></tr><tr><td>margin_good</td><td>2.0</td></tr><tr><td>margin_thin</td><td>-2.0</td></tr><tr><td>margin_unknown</td><td>-0.5</td></tr><tr><td>concentration_high</td><td>-1.5</td></tr><tr><td>brand_dominated</td><td>-1.0</td></tr><tr><td>missing_critical</td><td>-3.0</td></tr></tbody></table></details>
+<details><summary>费率假设 ⚠️ 示例值，请按你的类目与当期费率表校准</summary><table><tbody><tr><td>referral_fee_pct</td><td>0.15</td></tr><tr><td>referral_fee_min</td><td>0.3</td></tr><tr><td>fba_base_fee</td><td>3.06</td></tr><tr><td>fba_included_weight_lb</td><td>1.0</td></tr><tr><td>fba_per_lb_over</td><td>0.16</td></tr><tr><td>monthly_storage_per_cuft</td><td>0.78</td></tr><tr><td>cubic_feet_per_unit</td><td>0.05</td></tr><tr><td>storage_months_on_hand</td><td>2.0</td></tr><tr><td>head_freight_per_unit</td><td>0.0</td></tr><tr><td>prep_per_unit</td><td>0.0</td></tr><tr><td>misc_per_unit</td><td>0.0</td></tr><tr><td>ad_acos</td><td>0.25</td></tr><tr><td>promo_discount_pct</td><td>0.0</td></tr><tr><td>return_rate</td><td>0.06</td></tr><tr><td>return_loss_per_unit</td><td>0.0</td></tr><tr><td>fba_fee_override</td><td></td></tr></tbody></table></details>
+<details><summary>列映射</summary><table><tbody><tr><td>asin</td><td><code>ASIN</code></td></tr><tr><td>brand</td><td><code>Brand</code></td></tr><tr><td>bsr</td><td><code>Sales Rank: Current</code></td></tr><tr><td>category</td><td><code>Category</code></td></tr><tr><td>cogs</td><td><code>COGS</code></td></tr><tr><td>fba_fee</td><td><code>FBA Fee</code></td></tr><tr><td>monthly_revenue</td><td><code>Monthly Revenue</code></td></tr><tr><td>monthly_sales</td><td><code>Monthly Sales</code></td></tr><tr><td>price</td><td><code>Buy Box: Current</code></td></tr><tr><td>rating</td><td><code>Rating</code></td></tr><tr><td>reviews</td><td><code>Review Count</code></td></tr><tr><td>sellers</td><td><code>Seller Count</code></td></tr><tr><td>title</td><td><code>Title</code></td></tr><tr><td>weight_lb</td><td><code>Weight (lb)</code></td></tr></tbody></table></details>
+<footer>本报告由 DataToDecision 报告引擎生成。不提供销量预测，不承诺盈利。所有利润数字为按配置费率的推算值，所有分布指标基于你导入的样本而非全类目数据。报告可自由导出与转发。</footer>
+</div>
+</body>
+</html>
